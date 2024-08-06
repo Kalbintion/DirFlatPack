@@ -35,7 +35,6 @@ ECHO.                                  If left out, assumes current working dire
 ECHO.  /l filter, --list filter        The filter used listing files. If not set, will get all files
 ECHO.  /f format, --format format      Symlink file name format. See below for additional details. Default: @p@fn
 ECHO.  /r, --remove                    Removes existing existing symlinks from output path before creating new ones
-ECHO.  /s, --skip                      Skips creating a symlink if symlink already exists in output path
 ECHO.  /fd flags, --dirflags flags     Overrides flags for the DIR command. Default: /A-D-L /B /S
 ECHO.  /fs flags, --symflags flags     Overrides flags for the MKLINK command.
 ECHO.  /il chars, --illegal chars      Overrides default characters that are not suitable for filenames. Default: \/:?"
@@ -108,11 +107,6 @@ IF /I "%~1"=="/r"        SET "_Opt_Remove=TRUE" & SHIFT & GOTO :ARG-PARSER
 IF /I "%~1"=="-r"        SET "_Opt_Remove=TRUE" & SHIFT & GOTO :ARG-PARSER
 IF /I "%~1"=="--remove"  SET "_Opt_Remove=TRUE" & SHIFT & GOTO :ARG-PARSER
 
-REM /s, -s, --skip
-IF /I "%~1"=="/s"        SET "_Opt_Skip=TRUE" & SHIFT & GOTO :ARG-PARSER
-IF /I "%~1"=="-s"        SET "_Opt_Skip=TRUE" & SHIFT & GOTO :ARG-PARSER
-IF /I "%~1"=="--skip"    SET "_Opt_Skip=TRUE" & SHIFT & GOTO :ARG-PARSER
-
 SHIFT
 GOTO :ARG-PARSER
 
@@ -147,7 +141,6 @@ IF NOT DEFINED _Opt_DirFlag SET "_Opt_DirFlag=/A-D-L /B /S"
 IF NOT DEFINED _Opt_SymFlag SET "_Opt_SymFlag="
 IF NOT DEFINED _Opt_Illegal SET "_Opt_Illegal=\/:?""
 IF NOT DEFINED _Opt_Remove  SET "_Opt_Remove=FALSE"
-IF NOT DEFINED _Opt_Skip    SET "_Opt_Skip=FALSE"
 GOTO :CORE
 
 :ARG-CLEAN
@@ -165,7 +158,6 @@ SET "_Opt_DirFlag="
 SET "_Opt_SymFlag="
 SET "_Opt_Illegal="
 SET "_Opt_Remove="
-SET "_Opt_Skip="
 
 SET "_TEMP_FULL="
 SET "_TEMP_DRIVE="
@@ -228,8 +220,9 @@ SET _TEMP_Illegal=%_Opt_Illegal%
 CALL :CORE-CLEAN-VAR
 
 :: Make Symlink for file
-IF %_Opt_Verbose% EQU TRUE ECHO Creating symlink for %_TEMP_FULL%
+IF EXIST "%_DIR_To%%_TEMP_FORMAT%" IF %_Opt_Verbose% EQU TRUE ECHO Skipping symlink for %_TEMP_FULL%
 IF EXIST "%_Dir_To%%_TEMP_FORMAT%" GOTO :EOF
+IF %_Opt_Verbose% EQU TRUE ECHO Creating symlink for %_TEMP_FULL%
 SET /A _Count_Creation=%_Count_Creation%+1
 MKLINK %_OPT_SymFlag% "%_Dir_To%%_TEMP_FORMAT%" %_TEMP_FULL% 2>&1 >NUL
 GOTO :EOF
@@ -247,6 +240,8 @@ FOR /F "usebackq delims=" %%L IN (`DIR /AL /B "%_Dir_To%"`) DO DEL "%_Dir_To%%%L
 GOTO :EOF
 
 :CORE-COMPLETE
+ECHO. Flattening of directory %_Dir_From% has been completed.
+:: Fall-through to :END purposefully
 
 :END
 IF %_Opt_Verbose% EQU TRUE CALL :END-STATS
@@ -258,5 +253,6 @@ SET /A _Count_Skipped=%_Count_Files%-%_Count_Creation%
 ECHO.
 ECHO Created %_Count_Creation% symlinks for %_Count_Files% files, and skipped %_Count_Skipped% symlinks
 ECHO.
+GOTO :EOF
 
 :EOF
