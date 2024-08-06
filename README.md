@@ -25,5 +25,5 @@ The batch file usage information can always be shown at any time without visitin
 | /r, -r, --remove | | Removes existing symlinks from output path before creating new ones |
 | /fd flags, -fd flags, --dirflags flags | /A-D-L /B /S | Overrides flags for the DIR command. |
 | /fs flags, -fs flags, --symflags flags | | Overrides flags for the MKLINK command |
-| /il chars, -il chars, --illegal chars | \/:?" | Overrides default characters that are not suitable for filenames |
+| /il chars, -il chars, --illegal chars | \\/:?" | Overrides default characters that are not suitable for filenames |
 | /v, -v, --verbose | | If set, shows more detail on what it's doing |
