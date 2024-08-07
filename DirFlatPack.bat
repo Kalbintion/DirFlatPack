@@ -35,9 +35,11 @@ ECHO.                                  If left out, assumes current working dire
 ECHO.  /l filter, --list filter        The filter used listing files. If not set, will get all files
 ECHO.  /f format, --format format      Symlink file name format. See below for additional details. Default: @p@fn
 ECHO.  /r, --remove                    Removes existing existing symlinks from output path before creating new ones
+ECHO.  /u, --utf8                      Sets current character code page to 65001 for UTF-8 support
 ECHO.  /fd flags, --dirflags flags     Overrides flags for the DIR command. Default: /A-D-L /B /S
 ECHO.  /fs flags, --symflags flags     Overrides flags for the MKLINK command.
 ECHO.  /il chars, --illegal chars      Overrides default characters that are not suitable for filenames. Default: \/:?"
+ECHO.  /p, --pause                     Pauses for user input at end of execution
 ECHO.  /v, --verbose                   If set, shows more detail on what it's doing
 ECHO.
 ECHO. Format
@@ -57,6 +59,15 @@ ECHO.   @x    The extension of the file
 ECHO.   @a    The attributes of the file
 ECHO.   @t    The date and time of the file
 ECHO.   @z    The size of the file
+ECHO.
+ECHO.
+ECHO. Notes
+ECHO.  Setting UTF8 does not undo character code point change by end of script
+ECHO. 
+ECHO. Examples
+ECHO.   %__BAT_NAME% /r /v /p
+ECHO.   %__BAT_NAME% /d "C:\" /o "C:\Symlinks\"
+ECHO.   %__BAT_NAME% /d "C:\" /o "C:\Symlinks\" /r /u /p /v
 GOTO :EOF
 
 :ARG-PARSER
@@ -87,12 +98,12 @@ IF /I "%~1"=="/f"       SET "_Opt_Format=%~2" & SHIFT & SHIFT & GOTO :ARG-PARSER
 IF /I "%~1"=="-f"       SET "_Opt_Format=%~2" & SHIFT & SHIFT & GOTO :ARG-PARSER
 IF /I "%~1"=="--format" SET "_Opt_Format=%~2" & SHIFT & SHIFT & GOTO :ARG-PARSER
 
-REM /f, -f, --format
+REM /fd, -fd, --dirflags
 IF /I "%~1"=="/fd"        SET "_Opt_DirFlag=%~2" & SHIFT & SHIFT & GOTO :ARG-PARSER
 IF /I "%~1"=="-fd"        SET "_Opt_DirFlag=%~2" & SHIFT & SHIFT & GOTO :ARG-PARSER
 IF /I "%~1"=="--dirflags" SET "_Opt_DirFlag=%~2" & SHIFT & SHIFT & GOTO :ARG-PARSER
 
-REM /f, -f, --format
+REM /fs, -fs, --symflags
 IF /I "%~1"=="/fs"        SET "_Opt_SymFlag=%~2" & SHIFT & SHIFT & GOTO :ARG-PARSER
 IF /I "%~1"=="-fs"        SET "_Opt_SymFlag=%~2" & SHIFT & SHIFT & GOTO :ARG-PARSER
 IF /I "%~1"=="--symflags" SET "_Opt_SymFlag=%~2" & SHIFT & SHIFT & GOTO :ARG-PARSER
@@ -107,12 +118,22 @@ IF /I "%~1"=="/r"        SET "_Opt_Remove=TRUE" & SHIFT & GOTO :ARG-PARSER
 IF /I "%~1"=="-r"        SET "_Opt_Remove=TRUE" & SHIFT & GOTO :ARG-PARSER
 IF /I "%~1"=="--remove"  SET "_Opt_Remove=TRUE" & SHIFT & GOTO :ARG-PARSER
 
+REM /u, -u, --utf8
+IF /I "%~1"=="/u"        CHCP 65001 & SHIFT & GOTO :ARG-PARSER
+IF /I "%~1"=="-u"        CHCP 65001 & SHIFT & GOTO :ARG-PARSER
+IF /I "%~1"=="--utf8"    CHCP 65001 & SHIFT & GOTO :ARG-PARSER
+
+REM /p, -p, --pause
+IF /I "%~1"=="/p"        SET "_Opt_Pause=TRUE" & SHIFT & GOTO :ARG-PARSER
+IF /I "%~1"=="-p"        SET "_Opt_Pause=TRUE" & SHIFT & GOTO :ARG-PARSER
+IF /I "%~1"=="--pause"   SET "_Opt_Pause=TRUE" & SHIFT & GOTO :ARG-PARSER
+
 SHIFT
 GOTO :ARG-PARSER
 
 :ARG-INIT
 SET "__NAME=%~n0"
-SET "__VERSION=1.00"
+SET "__VERSION=1.10"
 SET "__BAT_NAME=%~nx0"
 SET "__BAT_PATH=%~dp0"
 SET "__BAT_FILE=%~0"
@@ -125,6 +146,7 @@ SET "_Opt_List="
 SET "_Opt_DirFlag="
 SET "_Opt_SymFlag="
 SET "_Opt_Illegal="
+SET "_Opt_Pause="
 
 SET "_Count_Creation=0"
 SET "_Count_Files=0"
@@ -141,6 +163,7 @@ IF NOT DEFINED _Opt_DirFlag SET "_Opt_DirFlag=/A-D-L /B /S"
 IF NOT DEFINED _Opt_SymFlag SET "_Opt_SymFlag="
 IF NOT DEFINED _Opt_Illegal SET "_Opt_Illegal=\/:?""
 IF NOT DEFINED _Opt_Remove  SET "_Opt_Remove=FALSE"
+IF NOT DEFINED _Opt_Pause   SET "_Opt_Pause=FALSE"
 GOTO :CORE
 
 :ARG-CLEAN
@@ -158,6 +181,7 @@ SET "_Opt_DirFlag="
 SET "_Opt_SymFlag="
 SET "_Opt_Illegal="
 SET "_Opt_Remove="
+SET "_Opt_Pause="
 
 SET "_TEMP_FULL="
 SET "_TEMP_DRIVE="
@@ -258,6 +282,6 @@ EXIT /B
 SET /A _Count_Skipped=%_Count_Files%-%_Count_Creation%
 ECHO Created %_Count_Creation% symlinks for %_Count_Files% files, and skipped %_Count_Skipped% symlinks
 ECHO.
-GOTO :EOF
+IF %_Opt_Pause% EQU TRUE PAUSE
 
 :EOF
