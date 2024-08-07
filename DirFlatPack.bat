@@ -170,6 +170,10 @@ SET "_TEMP_ATTR="
 SET "_TEMP_SIZE="
 
 SET "_TEMP_Illegal="
+SET "_TEMP_CHAR="
+SET "_TEMP_DATETIME="
+SET "_TEMP_File="
+SET "_TEMP_FORMAT="
 SET "_B_Illegal="
 
 SET "_Count_Creation="
@@ -236,10 +240,12 @@ IF NOT DEFINED _TEMP_Illegal GOTO :EOF
 GOTO :CORE-CLEAN-VAR
 
 :CORE-CLEAN-SYM
+IF %_Opt_Verbose% EQU TRUE ECHO Removing existing symlinks before recreating
 FOR /F "usebackq delims=" %%L IN (`DIR /AL /B "%_Dir_To%"`) DO DEL "%_Dir_To%%%L"
 GOTO :EOF
 
 :CORE-COMPLETE
+IF %_Opt_Verbose% EQU TRUE ECHO.
 ECHO. Flattening of directory %_Dir_From% has been completed.
 :: Fall-through to :END purposefully
 
@@ -250,7 +256,6 @@ EXIT /B
 
 :END-STATS
 SET /A _Count_Skipped=%_Count_Files%-%_Count_Creation%
-ECHO.
 ECHO Created %_Count_Creation% symlinks for %_Count_Files% files, and skipped %_Count_Skipped% symlinks
 ECHO.
 GOTO :EOF
